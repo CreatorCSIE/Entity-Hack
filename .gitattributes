@@ -1,0 +1,9 @@
+# 仓库内统一以 LF 存储，检出时也给 LF：
+# 这样 git 的换行规范化不会去动源码，也不会每次 status 都刷一串 CRLF 警告
+# （否则用户级 core.autocrlf=true 会把 .java/.md 检成 CRLF）。
+* text=auto eol=lf
+
+# 批处理文件在 Windows 上需以 CRLF 换行，否则 cmd 执行可能出错（实测：LF 的 .bat 会让 cmd 原地打转）。
+# 本行写在 * 之后，按 gitattributes「后面的规则覆盖前面的」语义生效。
+*.bat text eol=crlf
+*.cmd text eol=crlf

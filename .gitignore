@@ -1,0 +1,24 @@
+# 构建产物
+/build/
+/build-test/
+
+# 编译/打包产物
+/entity-hack.jar
+
+# 从 JDK 自动生成的运行时依赖（compile.bat 会按需重建）
+/lib/tools.jar
+/natives/attach.dll
+
+# 日志与临时文件
+*.log
+*.err
+
+# Java 编译产物（兜底）
+*.class
+
+# IDE / 系统
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db

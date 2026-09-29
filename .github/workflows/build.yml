@@ -1,0 +1,56 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ '[0-9]*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+
+      # compile.bat 会通过 JAVA_HOME（setup-java 已设置）找到 JDK 8，
+      # 自动生成 lib\tools.jar 与 natives\attach.dll，并打包 entity-hack.jar。
+      - name: Compile (compile.bat test)
+        shell: cmd
+        run: compile.bat test
+
+      # 端到端验证：三套仿造世界（0223 / 0227 / 0413）跑完整注入链路 + 206 项断言。
+      - name: Mock verification (run.bat mock)
+        shell: cmd
+        run: run.bat mock
+
+      # 仅打 tag（v*）时：把发布项打成 release zip，并创建 draft release。
+      # main 分支只跑构建验证，不上传任何 artifacts。
+      - name: Package Release zip
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        run: |
+          $stage = Join-Path $env:RUNNER_TEMP "stage"
+          New-Item -ItemType Directory -Path $stage | Out-Null
+          Copy-Item entity-hack.jar -Destination $stage
+          Copy-Item run.bat -Destination $stage
+          Copy-Item lib -Destination $stage -Recurse
+          Copy-Item natives -Destination $stage -Recurse
+          $zip = "Entity-Hack-${{ github.ref_name }}.zip"
+          Compress-Archive -Path "$stage\*" -DestinationPath $zip
+          "ZIP=$zip" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding ascii
+
+      - name: Create Draft Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: ${{ env.ZIP }}
